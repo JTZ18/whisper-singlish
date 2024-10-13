@@ -1,0 +1,9 @@
+.venv
+data
+lightning_logs
+wandb
+saved_models
+whisper_finetuning
+whisper-small-dv
+audio.wav
+__pycache__/
