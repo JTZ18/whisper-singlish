@@ -9,6 +9,7 @@ import pytorch_lightning as pl
 from model import WhisperFinetuning
 from dataset import WhisperDataset
 from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
+from pytorch_lightning.profilers import PyTorchProfiler
 import random
 import numpy as np
 
@@ -27,6 +28,7 @@ batch_size = 16  # Reduced batch size
 num_workers = 2  # Reduced number of workers
 max_epochs = 1000
 seed = 42  # Set your desired seed here
+use_profiler = False
 
 # Set seeds for reproducibility
 set_seed(seed)
@@ -40,6 +42,15 @@ if __name__ == "__main__":
     tb_logger = TensorBoardLogger("lightning_logs", name="whisper_finetuning")
     wandb_logger = WandbLogger(project="whisper_finetuning", log_model="all")
 
+    # Initialize the PyTorch Profiler
+    profiler = PyTorchProfiler(
+        on_trace_ready=torch.profiler.tensorboard_trace_handler("./lightning_logs/profiler0"),
+        schedule=torch.profiler.schedule(wait=1, warmup=1, active=3, repeat=2),
+        record_shapes=True,
+        profile_memory=True,
+        with_stack=True
+    )
+
     trainer = pl.Trainer(
         max_epochs=max_epochs,
         accelerator="mps",
@@ -48,7 +59,7 @@ if __name__ == "__main__":
         logger=[tb_logger, wandb_logger],  # Add both loggers
         log_every_n_steps=1,
         deterministic=True,  # Ensure deterministic behavior
-        # auto_lr_find=True,  # Add automatic learning rate finder
+        profiler=profiler if use_profiler else None,  # Add the profiler if use_profiler is True
     )
 
     try:
